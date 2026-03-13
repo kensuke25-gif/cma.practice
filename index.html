@@ -228,6 +228,84 @@ main {
 .dot.active { background:var(--ink); transform:scale(1.2); }
 .page-label { font-size:11px; color:var(--ink-soft); letter-spacing:.5px; }
 
+/* ── TOC (目次) ── */
+#tocView { display:none; }
+#quizView { display:block; }
+
+.toc-header {
+  margin-bottom: 28px;
+}
+.toc-header h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 26px; color: var(--ink); margin-bottom: 6px;
+}
+.toc-header p {
+  font-size: 13px; color: var(--ink-soft); letter-spacing: .5px;
+}
+
+.toc-table {
+  width: 100%; border-collapse: collapse;
+}
+.toc-table thead th {
+  font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+  color: var(--ink-soft); text-transform: uppercase;
+  padding: 8px 12px; border-bottom: 2px solid var(--rule);
+  text-align: left; background: var(--cream);
+}
+.toc-table thead th.th-center { text-align: center; }
+
+.toc-row {
+  border-bottom: 1px solid var(--rule);
+  transition: background .15s;
+}
+.toc-row:hover { background: var(--gold-pale); }
+
+.toc-row td {
+  padding: 14px 12px; vertical-align: middle;
+}
+.toc-num {
+  font-family: 'DM Serif Display', serif;
+  font-size: 20px; color: var(--gold); width: 52px;
+  white-space: nowrap;
+}
+.toc-title {
+  font-size: 14px; color: var(--ink); font-weight: 500;
+  line-height: 1.5;
+}
+.toc-page {
+  font-size: 12px; color: var(--ink-soft); white-space: nowrap;
+  width: 72px; text-align: center;
+}
+.toc-star-cell {
+  width: 44px; text-align: center;
+}
+.toc-star-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 20px; line-height: 1; padding: 4px;
+  color: var(--rule); transition: color .15s, transform .15s;
+}
+.toc-star-btn.bookmarked { color: var(--gold); }
+.toc-star-btn:hover { transform: scale(1.2); }
+
+.toc-jump-cell { width: 80px; text-align: center; }
+.toc-jump-btn {
+  background: transparent; border: 1.5px solid var(--ink);
+  color: var(--ink); padding: 6px 16px; border-radius: 6px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif;
+  transition: .2s; white-space: nowrap;
+}
+.toc-jump-btn:hover { background: var(--ink); color: var(--white); }
+
+/* ── Star button in quiz meta-row ── */
+.star-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 24px; line-height: 1; padding: 4px 6px;
+  color: var(--rule); transition: color .15s, transform .15s;
+}
+.star-btn.bookmarked { color: var(--gold); }
+.star-btn:hover { transform: scale(1.15); }
+
 /* ── PRINT ── */
 @media print {
   header, .prog-wrap, .navigation, .tab-bar { display:none !important; }
@@ -249,7 +327,7 @@ main {
 <body>
 
 <header>
-  <div class="logo">
+  <div class="logo" onclick="showToc()" style="cursor:pointer;" title="目次へ戻る">
     <span class="logo-sub">CMA Examination</span>
     <span class="logo-main">証券アナリスト｜マクロ経済学</span>
   </div>
@@ -258,51 +336,77 @@ main {
   </div>
 </header>
 
-<div class="prog-wrap">
+<div class="prog-wrap" id="progWrap">
   <div class="prog-bar" id="progBar" style="width:0%"></div>
 </div>
 
 <main>
-  <div class="meta-row">
-    <div class="q-num">
-      Question
-      <strong id="numDisplay">01</strong>
+  <!-- ── 目次ビュー ── -->
+  <div id="tocView">
+    <div class="toc-header">
+      <h2>問題一覧</h2>
+      <p>全 22 問 ／ マクロ経済学</p>
     </div>
-    <div class="category-tag" id="catDisplay">—</div>
+    <table class="toc-table">
+      <thead>
+        <tr>
+          <th>No.</th>
+          <th>テーマ</th>
+          <th class="th-center">テキスト</th>
+          <th class="th-center">★</th>
+          <th class="th-center"></th>
+        </tr>
+      </thead>
+      <tbody id="tocBody"></tbody>
+    </table>
   </div>
 
-  <div class="card">
-    <div class="tab-bar">
-      <button class="tab-btn active" id="tabQ" onclick="setTab('q')">問　題</button>
-      <button class="tab-btn"        id="tabA" onclick="setTab('a')">解　説</button>
+  <!-- ── 問題ビュー ── -->
+  <div id="quizView">
+    <div class="meta-row">
+      <div class="q-num">
+        Question
+        <strong id="numDisplay">01</strong>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="star-btn" id="starBtn" onclick="toggleBookmark()">☆</button>
+        <div class="category-tag" id="catDisplay">—</div>
+      </div>
     </div>
 
-    <div class="card-body">
-      <!-- 問題 -->
-      <div id="questionPanel">
-        <div class="q-source" id="qSource"></div>
-        <div class="q-text"   id="qText"></div>
-        <div class="sub-questions" id="subQList"></div>
+    <div class="card">
+      <div class="tab-bar">
+        <button class="tab-btn active" id="tabQ" onclick="setTab('q')">問　題</button>
+        <button class="tab-btn"        id="tabA" onclick="setTab('a')">解　説</button>
       </div>
 
-      <!-- 解説 -->
-      <div id="explanationPanel">
-        <div class="answer-header">
-          <span class="answer-badge">ANSWER</span>
-          <span class="answer-title">解答・解説</span>
+      <div class="card-body">
+        <!-- 問題 -->
+        <div id="questionPanel">
+          <div class="q-source" id="qSource"></div>
+          <div class="q-text"   id="qText"></div>
+          <div class="sub-questions" id="subQList"></div>
         </div>
-        <div class="exp-body" id="expBody"></div>
+
+        <!-- 解説 -->
+        <div id="explanationPanel">
+          <div class="answer-header">
+            <span class="answer-badge">ANSWER</span>
+            <span class="answer-title">解答・解説</span>
+          </div>
+          <div class="exp-body" id="expBody"></div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="navigation">
-    <button class="nav-btn" id="prevBtn" onclick="go(-1)" disabled>← 前の問題</button>
-    <div class="page-info">
-      <div class="page-dots" id="dotRow"></div>
-      <div class="page-label" id="pageLabel">1 / 5</div>
+    <div class="navigation">
+      <button class="nav-btn" id="prevBtn" onclick="go(-1)" disabled>← 前の問題</button>
+      <div class="page-info">
+        <div class="page-dots" id="dotRow"></div>
+        <div class="page-label" id="pageLabel">1 / 22</div>
+      </div>
+      <button class="nav-btn" id="nextBtn" onclick="go(1)">次の問題 →</button>
     </div>
-    <button class="nav-btn" id="nextBtn" onclick="go(1)">次の問題 →</button>
   </div>
 </main>
 
@@ -742,7 +846,102 @@ const questions = [
 
 let cur = 0;
 let tab = 'q';
+let bookmarks = new Set();
 
+// ── ブックマーク永続化 ──────────────────────────────
+function loadBookmarks(){
+  try {
+    const saved = localStorage.getItem('cma_bookmarks');
+    if(saved) bookmarks = new Set(JSON.parse(saved));
+  } catch(e) { bookmarks = new Set(); }
+}
+function saveBookmarks(){
+  localStorage.setItem('cma_bookmarks', JSON.stringify([...bookmarks]));
+}
+function toggleBookmark(){
+  const id = questions[cur].id;
+  if(bookmarks.has(id)) bookmarks.delete(id);
+  else bookmarks.add(id);
+  saveBookmarks();
+  updateStarBtn();
+  // TOCが表示中の場合は行の星も更新
+  syncTocStar(id);
+}
+function updateStarBtn(){
+  const id = questions[cur].id;
+  const btn = document.getElementById('starBtn');
+  if(bookmarks.has(id)){
+    btn.textContent = '★';
+    btn.classList.add('bookmarked');
+  } else {
+    btn.textContent = '☆';
+    btn.classList.remove('bookmarked');
+  }
+}
+function syncTocStar(id){
+  const cell = document.querySelector(`.toc-star-btn[data-id="${id}"]`);
+  if(!cell) return;
+  if(bookmarks.has(id)){
+    cell.textContent = '★';
+    cell.classList.add('bookmarked');
+  } else {
+    cell.textContent = '☆';
+    cell.classList.remove('bookmarked');
+  }
+}
+
+// ── 目次 ────────────────────────────────────────────
+function renderToc(){
+  const tbody = document.getElementById('tocBody');
+  tbody.innerHTML = '';
+  questions.forEach((q, i) => {
+    const tr = document.createElement('tr');
+    tr.className = 'toc-row';
+    const isBookmarked = bookmarks.has(q.id);
+    tr.innerHTML = `
+      <td class="toc-num">${pad(q.id)}</td>
+      <td class="toc-title">${q.category}</td>
+      <td class="toc-page">${q.source}</td>
+      <td class="toc-star-cell">
+        <button class="toc-star-btn${isBookmarked?' bookmarked':''}" data-id="${q.id}"
+          onclick="tocToggleBookmark(${q.id})">${isBookmarked?'★':'☆'}</button>
+      </td>
+      <td class="toc-jump-cell">
+        <button class="toc-jump-btn" onclick="showQuiz(${i})">開く</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+function tocToggleBookmark(id){
+  if(bookmarks.has(id)) bookmarks.delete(id);
+  else bookmarks.add(id);
+  saveBookmarks();
+  syncTocStar(id);
+  // 問題ビューが表示中で同じ問題なら星ボタンも更新
+  if(document.getElementById('quizView').style.display !== 'none'
+     && questions[cur].id === id){
+    updateStarBtn();
+  }
+}
+
+// ── ビュー切り替え ───────────────────────────────────
+function showToc(){
+  renderToc();
+  document.getElementById('tocView').style.display  = 'block';
+  document.getElementById('quizView').style.display = 'none';
+  document.getElementById('progWrap').style.display = 'none';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function showQuiz(idx){
+  cur = idx;
+  document.getElementById('tocView').style.display  = 'none';
+  document.getElementById('quizView').style.display = '';
+  document.getElementById('progWrap').style.display = '';
+  render();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ── ユーティリティ ───────────────────────────────────
 function pad(n){ return String(n).padStart(2,'0'); }
 
 function render(){
@@ -772,6 +971,9 @@ function render(){
   // ボタン
   document.getElementById('prevBtn').disabled = cur===0;
   document.getElementById('nextBtn').disabled = cur===questions.length-1;
+
+  // 星ボタン更新
+  updateStarBtn();
 
   // 問題文
   document.getElementById('qText').innerHTML = q.text
@@ -838,7 +1040,9 @@ function go(dir){
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
-render();
+// ── 初期化 ──────────────────────────────────────────
+loadBookmarks();
+showToc();
 </script>
 </body>
 </html>
